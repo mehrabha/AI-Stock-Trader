@@ -1,0 +1,23 @@
+# --- env ---
+venv/
+.env
+configs.env
+*.venv
+
+# --- llm ---
+models/
+data/
+
+*.log
+logs/
+nohup.out
+
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+Thumbs.db
+
+.vscode/
+.idea/
+.ipynb_checkpoints/
