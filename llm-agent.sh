@@ -12,7 +12,7 @@ case "$1" in
     sleep 2
 
     # Launch the python server in the background
-    nohup python src/controller.py > controller.log 2>&1 &
+    nohup python src/llm_controller.py > controller.log 2>&1 &
     echo $! > .controller.pid
 
     sleep 3
