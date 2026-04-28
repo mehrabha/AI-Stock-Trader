@@ -4,11 +4,11 @@ import asyncio
 from fastapi import FastAPI, HTTPException, APIRouter, Depends
 from pydantic import BaseModel
 import os
-from config import load_env
+from dotenv import load_dotenv
 from security import authenticate
 
 
-load_env()
+load_dotenv()
 
 BASE_ENDPOINT = os.getenv("BASE_PATH")
 IMAGE_NAME = os.getenv("IMAGE_NAME")

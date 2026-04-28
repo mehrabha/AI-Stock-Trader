@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 
 load_dotenv()
 
-
 def _format_price_points(rows, max_points: int) -> str:
     if rows.empty:
         return "No data available."

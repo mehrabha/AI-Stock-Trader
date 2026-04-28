@@ -1,4 +1,4 @@
-from data_fetcher import get_price_data, get_news_data, get_market_context
+from src.data_fetcher import get_price_data, get_news_data, get_market_context
 
 if __name__ == "__main__":
     symbol = "SPY"
