@@ -197,3 +197,60 @@ def get_news_data(symbol: str, start_date: str, end_date: str) -> List[Dict[str,
     except Exception as e:
         print(f"Error fetching news data for {symbol}: {e}")
         return []
+    
+def get_news_data_v2(symbol: str, start_utc_dt: datetime, end_utc_dt: datetime, limit: int = 10) -> str:
+    """
+    Fetches up to 10 news articles for a ticker during the last 60 minutes
+    PRIOR to the provided timestamp.
+
+    Returns market sentiments as a single string
+    """
+
+    API_KEY = os.getenv("POLYGON_API_KEY")
+
+    if not API_KEY:
+        raise Exception("Error: POLYGON_API_KEY environment variable not set")
+    
+    end_time_str = end_utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    start_time_str = start_utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # query
+    url = (
+        f"https://api.polygon.io/v2/reference/news"
+        f"?ticker={symbol}"
+        f"&published_utc.gte={start_time_str}"
+        f"&published_utc.lte={end_time_str}"
+        f"&limit={limit}"
+        f"&sort=published_utc"
+        f"&order=desc" # Gets the most recent articles inside the window first
+        f"&apiKey={API_KEY}"
+    )
+
+    print(f"DEBUG: Requesting URL: {url}")
+
+    try:
+        response = requests.get(url)
+
+        response.raise_for_status()
+
+        articles = response.json().get("results", [])
+
+        if not articles:
+            return f"No news found for {symbol} between {start_utc_dt} and {target_utc_dt}"
+        
+        market_summary = []
+        for article in articles:
+            title = article["title"]
+            src = article["publisher"]["name"]
+            description = article.get("description", "No description available.")
+            tickers = article["tickers"]
+            keywords = article.get("keywords", [])
+            pub_time = article.get("published_utc")
+
+            summary = f"title={title}; src={src}; description={description}; tickers={",".join(tickers)}; keywords={",".join(keywords)}; pub_time={pub_time}"
+            market_summary.append(summary)
+
+        return f"{end_time_str}: {len(market_summary)} news found!\n" + "\n".join(market_summary)
+    
+    except Exception as e:
+        return f"Exception occured while invoking news service!: {e}"
