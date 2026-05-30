@@ -25,6 +25,7 @@ class ChatRequest(BaseModel):
     prompt: str
     system_prompt: str = "You are quantitative trading AI"
     temperature: float = .3
+    cache_prompt: bool
 
 @router.post("/start")
 async def start_llm(user: str = Depends(authenticate)):
@@ -36,7 +37,7 @@ async def start_llm(user: str = Depends(authenticate)):
     except docker.errors.ImageNotFound:
         try:
             print(f"LLM image not found. Building from Dockerfile...")
-        
+
             docker_client.images.build(os.getcwd(), tag=IMAGE_NAME, rm=True)
             print("Build complete.")
         except docker.errors.BuildError as e:
@@ -83,14 +84,27 @@ async def chat(request: ChatRequest, user: str = Depends(authenticate)):
             {"role": "system", "content": request.system_prompt},
             {"role": "user", "content": request.prompt}
         ],
-        "temperature": request.temperature
+        "temperature": request.temperature,
+        "cache_prompt": request.cache_prompt
     }
 
     async with httpx.AsyncClient(timeout=LLM_TIMEOUT) as http_client:    
         try:
             resp = await http_client.post(LLM_URL, json=req_body)
             resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"]
+            response_json = resp.json()
+
+            message = response_json["choices"][0]["message"]
+            final_content = message["content"].strip()
+            reasoning = message["reasoning_content"].strip()
+            usage = response_json["usage"]
+
+            return {
+                "content": final_content,
+                "reasoning": reasoning,
+                "usage": usage
+            }
+        
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error invoking LLM: {e}")
 
@@ -128,4 +142,3 @@ if __name__ == "__main__":
     
     # Runs the controller on port 5000
     uvicorn.run(app, host="0.0.0.0", port=PORT)
-

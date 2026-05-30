@@ -5,11 +5,52 @@ PORT=5000
 APP_USER=user
 APP_PASS=changeit
 
+finish() {
+  echo ""
+  read -n 1 -s -r -p "Press any key to exit..."
+}
+trap finish EXIT
+
 case "$1" in
   start)
     echo "Launching DeepSeek R1..."
 
     sleep 2
+
+    # Download model
+    MODEL_DIR="models"
+    MODEL_FILE="model.gguf"
+    MODEL_URL="https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf"
+
+    if [ ! -d "$MODEL_DIR" ]; then
+      echo "Creating $MODEL_DIR directory..."
+      mkdir -p "$MODEL_DIR"
+    fi
+
+    # Check if the model file exists, download if it doesn't
+    if [ ! -f "$MODEL_DIR/$MODEL_FILE" ]; then
+      echo "Model not found locally. Downloading $MODEL_FILE..."
+      
+      curl -L -# -o "$MODEL_DIR/$MODEL_FILE" "$MODEL_URL"
+      
+      if [ $? -ne 0 ]; then
+          echo "Error: Failed to download the model via curl."
+          rm -f "$MODEL_DIR/$MODEL_FILE" 
+          exit 1
+      fi
+      echo "Download complete!"
+      
+      # Handle failures
+      if [ $? -ne 0 ]; then
+          echo "Error: Failed to download the model. Double check the URL or your connection."
+          # Clean up the partial/corrupted file if wget failed
+          rm -f "$MODEL_DIR/$MODEL_FILE" 
+          exit 1
+      fi
+      echo "Download complete!"
+    else
+      echo "Model $MODEL_FILE already exists. Skipping download."
+    fi
 
     # Launch the python server in the background
     nohup python src/llm_controller.py > controller.log 2>&1 &
@@ -79,6 +120,3 @@ case "$1" in
     echo "Usage: ./llm-agent.sh {start|chat|stop}"
     ;;
 esac
-
-read -n 1 -s -r -p "Press any key to continue..."
-echo ""
