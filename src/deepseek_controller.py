@@ -38,7 +38,7 @@ async def start_llm(user: str = Depends(authenticate)):
         try:
             print(f"LLM image not found. Building from Dockerfile...")
 
-            docker_client.images.build(os.getcwd(), tag=IMAGE_NAME, rm=True)
+            docker_client.images.build(path=os.getcwd(), tag=IMAGE_NAME, rm=True)
             print("Build complete.")
         except docker.errors.BuildError as e:
             print(f"Build failed for image={IMAGE_NAME}")
@@ -121,17 +121,17 @@ async def stop_llm(user : str = Depends(authenticate)):
 
 async def wait_for_ready():
     # Polls the LLM health endpoint for 60 seconds before giving up
-
-    for _ in range(60):
-        try:
-            async with httpx.AsyncClient(timeout=3.0) as http_client:
-                res = await http_client.get("http://localhost:8080/health")
-                if res.status_code == 200:
-                    return {"status": "ready"}
-                else:
-                    raise HTTPException(status_code=503)
-        except:
-            await asyncio.sleep(2)
+    await asyncio.sleep(5)
+    async with httpx.AsyncClient(timeout=3.0) as http_client: 
+        for _ in range(60):
+            res = await http_client.get("http://localhost:8080/health")
+            if res.status_code == 200:
+                return {"status": "ready"}
+            elif res.status_code == 503:
+                await asyncio.sleep(1)
+                continue
+            else:
+                res.raise_for_status()
     
     raise HTTPException(status_code=504, detail="LLM failed to start in time.")
 

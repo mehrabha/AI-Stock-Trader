@@ -1,6 +1,8 @@
 #!/bin/bash
 
+
 API_URL="http://localhost:5000/trader-api/v1"
+CONTAINER_NAME="trading-agent-1"
 PORT=5000
 APP_USER=user
 APP_PASS=changeit
@@ -29,7 +31,7 @@ case "$1" in
 
     # Check if the model file exists, download if it doesn't
     if [ ! -f "$MODEL_DIR/$MODEL_FILE" ]; then
-      echo "Model not found locally. Downloading $MODEL_FILE..."
+      echo "Model not found locally, downloading..."
       
       curl -L -# -o "$MODEL_DIR/$MODEL_FILE" "$MODEL_URL"
       
@@ -53,10 +55,12 @@ case "$1" in
     fi
 
     # Launch the python server in the background
-    nohup python src/llm_controller.py > controller.log 2>&1 &
+    nohup python -u src/deepseek_controller.py > controller.log 2>&1 &
     echo $! > .controller.pid
 
     sleep 3
+
+    tail -n 20 controller.log
 
     echo "This usually takes about a minute..."
 
@@ -66,7 +70,9 @@ case "$1" in
     if [ "$START_STATUS" -eq 200 ]; then
       echo -e "LLM server is online! Try it out: './llm-agent.sh chat'"
     else
-      echo -e "Failed to start AI. HTTP Status: $START_STATUS. Check controller.log for more info"
+      echo -e "Failed to start AI. HTTP Status: $START_STATUS."
+      docker logs --tail 30 "$CONTAINER_NAME" 2>&1
+      echo -e "\nCheck controller.log for more info..."
     fi
     ;;
   
@@ -81,7 +87,7 @@ case "$1" in
       # invoke LLM
       response=$(curl -sS -u "$APP_USER:$APP_PASS" -X POST "$API_URL/chat" \
         -H "Content-Type: application/json" \
-        -d "{\"prompt\": \"$user_input\"}")
+        -d "{\"prompt\": \"$user_input\", \"system_prompt\": \"You are an elite quantitative AI.\", \"cache_prompt\": false}")
 
       echo "$response"
     done
@@ -111,7 +117,7 @@ case "$1" in
 
     if [ ! -z "$GHOST_PID" ]; then
         echo "Found ghost process $GHOST_PID on PORT $PORT. Evicting..."
-        taskkill /F /T /PID $GHOST_PID > /dev/null 2>&1
+        taskkill //F //T //PID $GHOST_PID
         sleep 1
     fi
     ;;

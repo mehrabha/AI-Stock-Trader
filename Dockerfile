@@ -12,5 +12,5 @@ ENV LLAMA_ARG_HOST=0.0.0.0
 
 EXPOSE 8080
 
-# We will mount this path from our host machine
-ENTRYPOINT ["./llama-server", "-m", "model.gguf"]
+# Mount image folder to access LLM images
+ENTRYPOINT ["./llama-server", "-m", "/models/model.gguf"]
