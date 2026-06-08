@@ -24,7 +24,11 @@ source venv/bin/activate
 # Windows:
 venv\Scripts\activate
 
+# download dependencies
 pip install -r requirements.txt
+
+# download the llama.cpp image
+docker pull ghcr.io/ggml-org/llama.cpp:server-cuda
 ```
 
 ### 2. Start the LLM server:
@@ -49,4 +53,12 @@ Application will run into 401 errors in case of invalid keys!
 ```
 main.py
 ```
-Agent will run a series of validations against the historical market before transitioning into real-time paper trading. You should start seeing logs of the agent actively fetching live market data, and invoking the LLM for trading decisions!
+Agent will run a series of validations against the historical market before transitioning into real-time paper trading. You should start seeing logs of the agent actively fetching live market data, and invoking the LLM for trading decisions. Happy trading!
+
+### 5. Shutdown & Cleanup
+```
+# Run the following command to terminate the server and llm container
+./llm-agent.sh stop
+
+```
+Delete the downloaded images in docker once you are done with the project.

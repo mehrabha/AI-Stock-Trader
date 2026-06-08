@@ -2,6 +2,7 @@
 
 
 API_URL="http://localhost:5000/trader-api/v1"
+IMAGE_NAME="deepseek-trader"
 CONTAINER_NAME="trading-agent-1"
 PORT=5000
 APP_USER=user
@@ -52,6 +53,20 @@ case "$1" in
       echo "Download complete!"
     else
       echo "Model $MODEL_FILE already exists. Skipping download."
+    fi
+
+    # Check if the image already exists locally
+    if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+      echo "LLM image '$IMAGE_NAME' not found locally. Building from Dockerfile..."
+      docker build -t "$IMAGE_NAME" --rm .
+      
+      if [ $? -ne 0 ]; then
+        echo "Error: Docker build failed for image=$IMAGE_NAME."
+        exit 1
+      fi
+      echo "Build complete."
+    else
+      echo "Docker image '$IMAGE_NAME' already exists. Skipping build."
     fi
 
     # Launch the python server in the background

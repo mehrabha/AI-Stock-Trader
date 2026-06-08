@@ -27,6 +27,8 @@ class ChatRequest(BaseModel):
     temperature: float = .3
     cache_prompt: bool
 
+
+
 @router.post("/start")
 async def start_llm(user: str = Depends(authenticate)):
     # Builds the image if needed then launches the container
@@ -35,22 +37,8 @@ async def start_llm(user: str = Depends(authenticate)):
         docker_client.images.get(IMAGE_NAME)
         print(f"LLM image found, image={IMAGE_NAME}")
     except docker.errors.ImageNotFound:
-        try:
-            print(f"LLM image not found. Building from Dockerfile...")
+        raise Exception(f"LLM image not found={IMAGE_NAME}; build LLM image first using 'docker build'...")
 
-            docker_client.images.build(path=os.getcwd(), tag=IMAGE_NAME, rm=True)
-            print("Build complete.")
-        except docker.errors.BuildError as e:
-            print(f"Build failed for image={IMAGE_NAME}")
-
-            for line in e.build_log:
-                if 'stream' in line:
-                    print(line['stream'].strip())
-                elif 'error' in line:
-                    print(line['error'].strip())
-        except docker.errors.APIError as e:
-            print(f"Docker server error: {e}")
-    
     try:
         print(f"Starting container={CONTAINER_NAME}")
         container = docker_client.containers.get(CONTAINER_NAME)
